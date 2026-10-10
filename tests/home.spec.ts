@@ -1,57 +1,28 @@
 import { test, expect } from '@playwright/test'
 import { PageManager } from '../pages/PageManager'
+test.describe('Home Page', () => {
+    test('should load page successfully', { tag: '@smoke' }, async ({ page }) => {
+        const pm = new PageManager(page)
+        await pm.homePage.goto()
 
-test('load successful', { tag: '@smoke' }, async ({ page }) => {
-    const pm = new PageManager(page)
-    await pm.homePage.goto()
+        await expect(page).toHaveTitle('Contact List App')
+    })
 
-    await expect(page).toHaveTitle('Contact List App')
-})
+    const invalidLoginCases = [
+        { name: 'wrong username and password', email: 'wrong-user', password: 'wrong-password' },
+        { name: 'empty credentials', email: '', password: '' },
+        { name: 'username only', email: 'admin', password: '' },
+        { name: 'password only', email: '', password: 'admin123' },
+    ]
 
-test('wrong username and password', async ({ page }) => {
-    const pm = new PageManager(page)
-    await pm.homePage.goto()
+    for (const { name, email, password } of invalidLoginCases) {
+        test(`should display error for ${name}`, async ({ page }) => {
+            const pm = new PageManager(page)
 
-    // login
-    await page.getByRole('textbox', { name: 'Email' }).fill('wrong-user')
-    await page.getByRole('textbox', { name: 'Password' }).fill('wrong-password')
+            await pm.homePage.goto()
+            await pm.homePage.loginAs(email, password)
 
-    await page.getByRole('button', { name: 'Submit' }).click()
-    await expect(page.locator('#error')).toContainText('Incorrect username or password')
-
-})
-
-test('empty credentials', async ({ page }) => {
-    const pm = new PageManager(page)
-    await pm.homePage.goto()
-
-    // login
-    await page.getByRole('textbox', { name: 'Email' }).fill('')
-    await page.getByRole('textbox', { name: 'Password' }).fill('')
-
-    await page.getByRole('button', { name: 'Submit' }).click()
-    await expect(page.locator('#error')).toContainText('Incorrect username or password')
-
-})
-
-test('username-only', async ({ page }) => {
-    await page.goto('https://thinking-tester-contact-list.herokuapp.com/')
-
-    // login
-    await page.getByRole('textbox', { name: 'Email' }).fill('admin')
-
-    await page.getByRole('button', { name: 'Submit' }).click()
-    await expect(page.locator('#error')).toContainText('Incorrect username or password')
-
-})
-
-test('password-only', async ({ page }) => {
-    await page.goto('https://thinking-tester-contact-list.herokuapp.com/')
-
-    // login
-    await page.getByRole('textbox', { name: 'Password' }).fill('admin123')
-
-    await page.getByRole('button', { name: 'Submit' }).click()
-    await expect(page.locator('#error')).toContainText('Incorrect username or password')
-
+            await expect(page.locator('#error')).toContainText('Incorrect username or password')
+        })
+    }
 })
